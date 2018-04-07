@@ -15,6 +15,7 @@ object TopicActor {
     case class Unsubscribe(user: User) extends Message
     case class ReadAll(user: User) extends Message
     case class NewComment(updatingUser: User) extends Message
+    case class SetUnread(user: User) extends Message
   }
 
   /**
@@ -88,6 +89,18 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
           child ! StatusMessage.ReadAllComments
         case None =>
           log.warning("ReadAll received for {} but the user did not subscribe to {}", user, topic)
+      }
+
+    /**
+     * Notify unread items to only one child(i.e. user)
+     * It must be used only in the initialization phase of the cache for the user
+     */
+    case Message.SetUnread(user) =>
+      mapping.get(user) match {
+        case Some(child) =>
+          child ! StatusMessage.NewComment
+        case None =>
+          log.warning("SetUnread received for {} but the user did not subscribe to {}", user, topic)
       }
   }
 }

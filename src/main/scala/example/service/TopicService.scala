@@ -52,7 +52,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
    * If the topic is not initialized inside this service, log an error message.
    */
   def newMessage(topic: Topic, updatingUser: User): Unit = {
-    logger.debug("{}: {} send a new message for {}", serviceName, updatingUser, topic)
+    logger.debug("{}: {} sends a new message for {}", serviceName, updatingUser, topic)
     mapping.get(topic) match {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.NewComment(updatingUser)
@@ -74,4 +74,19 @@ class TopicService(system: ActorSystem, userService: UserService) {
         logger.error("{} is not initialized yet", topic)
     }
   }
+
+  /**
+   * Set the unread status for the topic and the user.
+   * It must be used only in the initialization phase of the cache for the user.
+   */
+  def setUnread(topic: Topic, user: User): Unit = {
+    logger.debug("{}: {} sets the status = unread for {}", serviceName, user, topic)
+    mapping.get(topic) match {
+      case Some(topicRef) =>
+        topicRef ! TopicActor.Message.SetUnread(user)
+      case None =>
+        logger.error("{} is not initialized yet", topic)
+    }
+  }
+
 }

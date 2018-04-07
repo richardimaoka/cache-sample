@@ -35,7 +35,7 @@ class TopicUserStatusActor(topic: Topic, user: User, userRef: ActorRef)
   extends FSM[TopicUserStatusActor.State, TopicUserStatusActor.Data] {
   import TopicUserStatusActor._
 
-  startWith(State.Unread, Data(userRef))
+  startWith(State.Read, Data(userRef))
 
   when(State.Unread) {
     case Event(Message.ReadAllComments, _) ⇒
@@ -50,6 +50,9 @@ class TopicUserStatusActor(topic: Topic, user: User, userRef: ActorRef)
     case Event(Message.NewComment, _) ⇒
       log.debug("NewComment received for {} and {}", topic, user)
       goto(State.Unread)
+    case Event(Message.ReadAllComments, _) ⇒
+      log.debug("ReadAllComments received for {} and {} while the status is Read", topic, user)
+      stay
   }
 
   onTransition {

@@ -12,6 +12,8 @@ object TestBatchUpdaterActor {
 }
 
 class TestBatchUpdaterActor(testReporter: ActorRef) extends BatchUpdaterActor {
-  override def updateFirebase(data: Data) =
+  override def updateFirebase(data: Data) = {
+    println(data)
     testReporter ! data
+  }
 }
