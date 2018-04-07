@@ -15,7 +15,7 @@ object TopicActor {
   object Message {
     case class Subscribe(user: User) extends Message
     case class Unsubscribe(user: User) extends Message
-    case class ReadAll(user: User) extends Message
+    case class AllRead(user: User) extends Message
     case class NewComment(updatingUser: User) extends Message
     case class SetUnread(user: User) extends Message
   }
@@ -91,10 +91,10 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      * Notify only the child which is corresponding to the user
      * who read all the comments for the topic
      */
-    case Message.ReadAll(user) =>
+    case Message.AllRead(user) =>
       mapping.get(user) match {
         case Some(child) =>
-          child ! StatusMessage.ReadAllComments
+          child ! StatusMessage.AllRead
         case None =>
           log.warning("ReadAll received for {} but the user did not subscribe to {}", user, topic)
       }

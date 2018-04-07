@@ -11,7 +11,7 @@ object TopicUserStatusActor {
   object Message {
     case class SetUserRef(userRef: ActorRef) extends Message
     case object NewComment extends Message
-    case object ReadAllComments extends Message
+    case object AllRead extends Message
   }
 
   sealed trait State
@@ -51,7 +51,7 @@ class TopicUserStatusActor(topic: Topic, user: User)
   }
 
   when(State.Unread) {
-    case Event(Message.ReadAllComments, _) ⇒
+    case Event(Message.AllRead, _) ⇒
       log.debug("ReadAllComments received for {} and {}", topic, user)
       goto(State.Read)
     case Event(Message.NewComment, _) ⇒
@@ -63,7 +63,7 @@ class TopicUserStatusActor(topic: Topic, user: User)
     case Event(Message.NewComment, _) ⇒
       log.debug("NewComment received for {} and {}", topic, user)
       goto(State.Unread)
-    case Event(Message.ReadAllComments, _) ⇒
+    case Event(Message.AllRead, _) ⇒
       log.debug("ReadAllComments received for {} and {} while the status is Read", topic, user)
       stay
   }

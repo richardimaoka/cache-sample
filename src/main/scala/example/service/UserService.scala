@@ -14,8 +14,6 @@ class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService)
 
   implicit val timeout: Timeout = 1.second
 
-  val serviceName: String = getClass.getSimpleName
-
   val userParent: ActorRef =
     system.actorOf(UserParentActor.props(batchUpdaterService.batchUpdaterRef), UserParentActor.name)
 
