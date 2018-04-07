@@ -29,7 +29,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.Subscribe(user)
       case None =>
-        logger.error("{} is not initialized yet", topic)
+        logger.error("{}[subscribeTo]: {} is not initialized yet", serviceName,  topic)
     }
   }
 
@@ -43,7 +43,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.Unsubscribe(user)
       case None =>
-        logger.error("{} is not initialized yet", topic)
+        logger.error("{}[unsubscribeFrom]: {} is not initialized yet", serviceName, topic)
     }
   }
 
@@ -57,7 +57,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.NewComment(updatingUser)
       case None =>
-        logger.error("{} is not initialized yet", topic)
+        logger.error("{}[newMessage]: {} is not initialized yet", serviceName, topic)
     }
   }
 
@@ -71,7 +71,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.ReadAll(user)
       case None =>
-        logger.error("{} is not initialized yet", topic)
+        logger.error("{}[allRead]: {} is not initialized yet", serviceName, topic)
     }
   }
 
@@ -85,7 +85,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
       case Some(topicRef) =>
         topicRef ! TopicActor.Message.SetUnread(user)
       case None =>
-        logger.error("{} is not initialized yet", topic)
+        logger.error("{}[setUnread]: {} is not initialized yet", serviceName,  topic)
     }
   }
 

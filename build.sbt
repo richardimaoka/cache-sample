@@ -11,5 +11,6 @@ lazy val root = (project in file(".")).
       "org.scalactic" %% "scalactic" % "3.0.5" % "test",
       "org.scalatest" %% "scalatest" % "3.0.5" % "test",
       "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % Test
-    )
+    ),
+    parallelExecution in Test := false
   )

@@ -49,12 +49,12 @@ class BatchUpdaterActor
   }
 
   when(State.ColdStandBy) {
-    case Event(Message.Update(user, unreadCount), data: Data) =>
-      goto(State.WarmStandBy) using stateData + (user -> unreadCount)
+    case Event(Message.Update(user, unreadCount), _: Data) =>
+      goto(State.WarmStandBy) using Map(user -> unreadCount)
   }
 
-  def updateFirebase(data: Data): Unit =
-    println(s"updateFirebase triggered $data")
+  def updateFirebase(data: Data): Unit = ()
+    //println(s"updateFirebase triggered $data")
 
   initialize()
 }

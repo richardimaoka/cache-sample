@@ -1,3 +1,5 @@
+package example
+
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import example.actor.BatchUpdaterActor
@@ -7,7 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class MySpec() extends TestKit(ActorSystem("MySpec")) with ImplicitSender
+class BasicSpec() extends TestKit(ActorSystem("BasicSpec")) with ImplicitSender
   with WordSpecLike with Matchers with BeforeAndAfterAll {
 
   val batchUpdaterService = new TestBatchUpdaterService(system, testActor)
@@ -94,7 +96,7 @@ class MySpec() extends TestKit(ActorSystem("MySpec")) with ImplicitSender
       topicService.setUnread(Topic("topicA"), user3)
 
       val user3Unread = countUnreadTopics(subscriptions.get(user3).get)
-      val expected = constructCountData(subscriptions) + (user3 -> (user3Unread + 1))
+      val expected = Map(user3 -> (user3Unread + 1))
 
       expectMsg(200.milliseconds, expected)
     }
