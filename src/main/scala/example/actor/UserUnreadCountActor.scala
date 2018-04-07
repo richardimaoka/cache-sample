@@ -1,7 +1,8 @@
 package example.actor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import example.domain.User
+import example.actor.BatchUpdaterActor.{Message => UpdaterMessage}
 
 object UserUnreadCountActor {
   /**
@@ -11,7 +12,6 @@ object UserUnreadCountActor {
   object Message {
     case object Increment extends Message
     case object Decrement extends Message
-    case class SetUnreadCount(count: Int) extends Message
   }
 
   /**
@@ -22,22 +22,20 @@ object UserUnreadCountActor {
     Props(new UserUnreadCountActor(user, batchUpdater))
 }
 
-class UserUnreadCountActor(user: User, batchUpdater: ActorRef) extends Actor {
+class UserUnreadCountActor(user: User, batchUpdater: ActorRef) extends Actor with ActorLogging {
   import UserUnreadCountActor._
 
   var unreadCount: Int = 0
 
-  def receive = {
-    case Message.SetUnreadCount(count) =>
-      unreadCount = count
-      batchUpdater ! ""
-
+  def receive: Receive = {
     case Message.Increment =>
+      log.debug("Increment received for {}", user)
       unreadCount += 1
-      batchUpdater ! ""
+      batchUpdater ! UpdaterMessage.Update(user, unreadCount)
 
     case Message.Decrement =>
+      log.debug("Decrement received for {}", user)
       if(unreadCount > 0) unreadCount -= 1
-      batchUpdater ! ""
+      batchUpdater ! UpdaterMessage.Update(user, unreadCount)
   }
 }

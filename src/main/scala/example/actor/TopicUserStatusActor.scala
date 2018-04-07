@@ -37,16 +37,19 @@ class TopicUserStatusActor(topic: Topic, user: User, userRef: ActorRef)
 
   startWith(State.Unread, Data(userRef))
 
-  when(State.Read) {
-    case Event(Message.NewComment, _) ⇒
-      log.debug("NewComment received for {} and {}", topic, user)
-      goto(State.Unread)
-  }
-
   when(State.Unread) {
     case Event(Message.ReadAllComments, _) ⇒
       log.debug("ReadAllComments received for {} and {}", topic, user)
       goto(State.Read)
+    case Event(Message.NewComment, _) ⇒
+      log.debug("NewComment received for {} and {} while the status is Unread", topic, user)
+      stay
+  }
+
+  when(State.Read) {
+    case Event(Message.NewComment, _) ⇒
+      log.debug("NewComment received for {} and {}", topic, user)
+      goto(State.Unread)
   }
 
   onTransition {

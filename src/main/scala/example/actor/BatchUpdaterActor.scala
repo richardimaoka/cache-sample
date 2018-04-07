@@ -54,7 +54,7 @@ class BatchUpdaterActor
   }
 
   private def updateFirebase(data: Data): Unit =
-    println("updateFirebase triggered")
+    println(s"updateFirebase triggered $data")
 
   initialize()
 }
