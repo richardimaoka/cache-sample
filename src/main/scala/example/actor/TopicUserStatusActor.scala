@@ -2,7 +2,6 @@ package example.actor
 
 import akka.actor.{ActorRef, FSM, Props}
 import example.domain.{Topic, User}
-import example.service.UserService
 
 object UserUnreadStatusActor {
   /**
