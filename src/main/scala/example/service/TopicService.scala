@@ -5,7 +5,7 @@ import akka.event.LoggingAdapter
 import example.actor.TopicActor
 import example.domain.{Topic, User}
 
-class TopicService(system: ActorSystem) {
+class TopicService(system: ActorSystem, userService: UserService) {
   var mapping: Map[Topic, ActorRef] = Map.empty
   val logger: LoggingAdapter = system.log
 
@@ -17,7 +17,7 @@ class TopicService(system: ActorSystem) {
    */
   def addTopic(topic: Topic): Unit = {
     logger.debug("Adding a topic actor for {}", topic)
-    val ref = system.actorOf(TopicActor.props(topic), topic.topicId)
+    val ref = system.actorOf(TopicActor.props(topic, userService), topic.topicId)
     mapping += (topic -> ref)
   }
 

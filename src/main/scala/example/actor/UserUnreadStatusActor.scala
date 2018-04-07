@@ -2,6 +2,7 @@ package example.actor
 
 import akka.actor.{ActorRef, FSM, Props}
 import example.domain.{Topic, User}
+import example.service.UserService
 
 object UserUnreadStatusActor {
   /**
@@ -11,19 +12,15 @@ object UserUnreadStatusActor {
   object Message {
     case object NewComment extends Message
     case object ReadAllComments extends Message
-
-    //only used for self-messaging from UserUnreadStatusActor
-    private[UserUnreadStatusActor] case class SetBatchUpdater(batchUpdater: ActorRef) extends Message
   }
 
   sealed trait State
   object State {
-    case object Uninitialized extends State
     case object Read extends State
     case object Unread extends State
   }
 
-  case class Data(batchUpdater: ActorRef)
+  case class Data(userUnreadCounter: ActorRef)
 
   def pathName(user: String): String = "/user/unread/" + user
 
@@ -31,21 +28,15 @@ object UserUnreadStatusActor {
    * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
-  def props(topic: Topic, user: User): Props =
-    Props(new UserUnreadStatusActor(topic, user))
+  def props(topic: Topic, user: User, userRef: ActorRef): Props =
+    Props(new UserUnreadStatusActor(topic, user, userRef))
 }
 
-class UserUnreadStatusActor(topic: Topic, user: User)
+class UserUnreadStatusActor(topic: Topic, user: User, userRef: ActorRef)
   extends FSM[UserUnreadStatusActor.State, UserUnreadStatusActor.Data] {
   import UserUnreadStatusActor._
 
-  //batchUpdater is intentionally null as it will be set upon transition to Unread
-  startWith(State.Uninitialized, Data(batchUpdater = null))
-
-  when(State.Uninitialized) {
-    case Event(Message.SetBatchUpdater(batchUpdater), _) =>
-      goto(State.Unread) using Data(batchUpdater)
-  }
+  startWith(State.Unread, Data(userRef))
 
   when(State.Read) {
     case Event(Message.NewComment, _) ⇒
@@ -61,8 +52,10 @@ class UserUnreadStatusActor(topic: Topic, user: User)
 
   onTransition {
     case State.Read -> State.Unread ⇒
-      stateData.batchUpdater ! UserUnreadCountActor.Message.Increment
+      stateData.userUnreadCounter ! UserUnreadCountActor.Message.Increment
     case State.Unread -> State.Read ⇒
-      stateData.batchUpdater ! UserUnreadCountActor.Message.Decrement
+      stateData.userUnreadCounter ! UserUnreadCountActor.Message.Decrement
   }
+
+  initialize()
 }

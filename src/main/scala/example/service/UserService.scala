@@ -19,4 +19,7 @@ class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService)
     )
     mapping = mapping + (user -> ref)
   }
+
+
+  def userRef(user: User): Option[ActorRef] = mapping.get(user)
 }

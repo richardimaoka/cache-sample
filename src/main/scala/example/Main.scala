@@ -18,8 +18,8 @@ object Main {
 
     try {
       val batchUpdaterService = new BatchUpdaterService(system)
-      val topicService = new TopicService(system)
       val userService = new UserService(system, batchUpdaterService)
+      val topicService = new TopicService(system, userService)
 
       for {
         topicId <- List("topicA", "topicB", "topicC")
