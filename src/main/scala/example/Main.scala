@@ -1,9 +1,9 @@
-package example.main
+package example
 
 import java.io.{PrintWriter, StringWriter}
 
 import example.domain.{Topic, User}
-import example.service.{BatchUpdaterService, TopicService, UserService}
+import example.service.{ProductionBatchUpdaterService, TopicService, UserService}
 
 object Main {
   def getTopics(i: Int): List[String] =
@@ -16,8 +16,8 @@ object Main {
     implicit val ec = system.dispatcher
 
     try {
-      val batchUpdaterService = new BatchUpdaterService(system)
-      val userService = new UserService(system, batchUpdaterService)
+      val batchUpdaterService = new ProductionBatchUpdaterService(system)
+      val userService = new  UserService(system, batchUpdaterService)
       val topicService = new TopicService(system, userService)
 
       for {

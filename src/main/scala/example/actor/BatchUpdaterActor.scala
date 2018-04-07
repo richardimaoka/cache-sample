@@ -53,7 +53,7 @@ class BatchUpdaterActor
       goto(State.WarmStandBy) using Map(user -> unreadCount)
   }
 
-  private def updateFirebase(data: Data): Unit =
+  def updateFirebase(data: Data): Unit =
     println(s"updateFirebase triggered $data")
 
   initialize()

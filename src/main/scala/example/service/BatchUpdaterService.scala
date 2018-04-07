@@ -1,8 +1,19 @@
 package example.service
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import example.actor.BatchUpdaterActor
 
-class BatchUpdaterService(system: ActorSystem) {
-  val batchUpdaterRef = system.actorOf(BatchUpdaterActor.props, "batchUpdater")
+object BatchUpdaterService {
+  val batchUpdaterName = "batchUpdater"
+}
+
+trait BatchUpdaterService {
+  def batchUpdaterRef: ActorRef
+}
+
+class ProductionBatchUpdaterService(system: ActorSystem)
+  extends BatchUpdaterService {
+  import BatchUpdaterService._
+
+  val batchUpdaterRef = system.actorOf(BatchUpdaterActor.props, batchUpdaterName)
 }
