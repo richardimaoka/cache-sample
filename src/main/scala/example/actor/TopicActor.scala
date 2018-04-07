@@ -14,7 +14,7 @@ object TopicActor {
   }
 
   /**
-   * Use this to create an instance of TopicActor.
+   * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
   def props(topic: Topic): Props = Props(new TopicActor(topic: Topic))

@@ -5,7 +5,7 @@ import example.domain.User
 
 object UserUnreadCountActor {
   /**
-   * Messages which TopicEventProcessorActor will receive.
+   * Messages which the corresponding actor will receive.
    */
   sealed trait Message
   object Message {
@@ -15,16 +15,16 @@ object UserUnreadCountActor {
   }
 
   /**
-   * Use this to create an instance of TopicEventProcessorActor.
+   * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
-  def props(user: User): Props = Props(new UserUnreadCountActor(user))
+  def props(user: User, batchUpdater: ActorRef): Props =
+    Props(new UserUnreadCountActor(user, batchUpdater))
 }
 
-class UserUnreadCountActor(user: User) extends Actor {
+class UserUnreadCountActor(user: User, batchUpdater: ActorRef) extends Actor {
   import UserUnreadCountActor._
 
-  var batchUpdater: ActorRef = self
   var unreadCount: Int = 0
 
   def receive = {

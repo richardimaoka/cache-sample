@@ -5,9 +5,14 @@ import akka.event.LoggingAdapter
 import example.actor.TopicActor
 import example.domain.{Topic, User}
 
+import scala.concurrent.Future
+
 class TopicService(system: ActorSystem) {
   var mapping: Map[Topic, ActorRef] = Map.empty
   val logger: LoggingAdapter = system.log
+
+  private def pathName(topic: Topic, user: User): String =
+    s"/user/${topic.topicId}/${user.userId}"
 
   /**
    * Create a topic

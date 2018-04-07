@@ -5,7 +5,7 @@ import example.domain.{Topic, User}
 
 object UserUnreadStatusActor {
   /**
-   * Messages which TopicEventProcessorActor will receive.
+   * Messages which the corresponding actor will receive.
    */
   sealed trait Message
   object Message {
@@ -28,7 +28,7 @@ object UserUnreadStatusActor {
   def pathName(user: String): String = "/user/unread/" + user
 
   /**
-   * Use this to create an instance of TopicEventProcessorActor.
+   * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
   def props(topic: Topic, user: User): Props =

@@ -1,7 +1,8 @@
 package example.actor
 
-import akka.actor.FSM
+import akka.actor.{FSM, Props}
 import example.domain.User
+
 import scala.concurrent.duration._
 
 object BatchUpdaterActor {
@@ -20,12 +21,20 @@ object BatchUpdaterActor {
   }
 
   type Data = Map[User, Int]
+
+  /**
+   * Use this to create an instance of the corresponding actor.
+   * Return an immutable Props instance so that it can be passed around among actors if necessary.
+   */
+  val props: Props = Props(new BatchUpdaterActor)
 }
 
 class BatchUpdaterActor
   extends FSM[BatchUpdaterActor.State, BatchUpdaterActor.Data] {
 
   import BatchUpdaterActor._
+
+  startWith(State.ColdStandBy, Map.empty)
 
   when(State.WarmStandBy, stateTimeout = 100.milliseconds) {
     case Event(Message.Update(user, unreadCount), data: Data) =>
@@ -46,4 +55,6 @@ class BatchUpdaterActor
 
   private def updateFirebase(data: Data): Unit =
     println("updateFirebase triggered")
+
+  initialize()
 }

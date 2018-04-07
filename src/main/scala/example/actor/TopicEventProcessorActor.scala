@@ -6,7 +6,7 @@ import example.domain.{Topic, User}
 
 object TopicEventProcessorActor {
   /**
-   * Messages which TopicEventProcessorActor will receive.
+   * Messages which the corresponding actor will receive.
    */
   sealed trait Event
   object Event{
@@ -15,7 +15,7 @@ object TopicEventProcessorActor {
   }
 
   /**
-   * Use this to create an instance of TopicEventProcessorActor.
+   * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
   val props: Props = Props(new TopicEventProcessorActor)

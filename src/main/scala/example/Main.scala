@@ -3,7 +3,7 @@ package example
 import java.io.{PrintWriter, StringWriter}
 
 import example.domain.{Topic, User}
-import example.service.{TopicService, UserService}
+import example.service.{BatchUpdaterService, TopicService, UserService}
 
 object Main {
   def getTopics(i: Int): List[String] =
@@ -16,8 +16,9 @@ object Main {
     implicit val ec = system.dispatcher
 
     try {
+      val batchUpdaterService = new BatchUpdaterService(system)
       val topicService = new TopicService(system)
-      val userService = new UserService(system)
+      val userService = new UserService(system, batchUpdaterService)
 
       for {
         topicId <- List("topicA", "topicB", "topicC")
