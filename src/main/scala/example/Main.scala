@@ -2,6 +2,7 @@ package example
 
 import java.io.{PrintWriter, StringWriter}
 
+import example.actor.TopicMessageProcessorActor
 import example.domain.{Topic, User}
 import example.service.{BatchUpdaterService, TopicService, UserService}
 
@@ -32,6 +33,9 @@ object Main {
         i <- 1 to 10
         topicId <- getTopics(i)
       } topicService.subscribeTo(Topic(topicId), User("user" + i))
+
+
+      val topicActor = system.actorOf(TopicMessageProcessorActor.props)
 
       Thread.sleep(1000)
     } catch {
