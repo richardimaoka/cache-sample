@@ -27,6 +27,8 @@ object BatchUpdaterActor {
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
   val props: Props = Props(new BatchUpdaterActor)
+
+  val name = "batchUpdater"
 }
 
 class BatchUpdaterActor

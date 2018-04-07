@@ -1,29 +1,31 @@
 package example.service
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.event.LoggingAdapter
-import example.actor.UserUnreadCountActor
+import akka.pattern.ask
+import akka.util.Timeout
+import example.actor.UserParentActor
 import example.domain.User
 
-import scala.collection.mutable
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService) {
+  import UserParentActor._
+
+  implicit val timeout: Timeout = 1.second
+
   val serviceName: String = getClass.getSimpleName
-  val mapping: mutable.Map[User, ActorRef] = mutable.Map.empty
-  val logger: LoggingAdapter = system.log
+
+  val userParent: ActorRef =
+    system.actorOf(UserParentActor.props(batchUpdaterService.batchUpdaterRef), UserParentActor.name)
 
   /**
    * Add a user who can count the unread topics
    */
   def addUser(user: User): Unit = {
-    logger.debug("{}: Adding {}", serviceName, user)
-    val ref = system.actorOf(
-      UserUnreadCountActor.props(user, batchUpdaterService.batchUpdaterRef)
-    )
-    mapping.update(user, ref)
+    userParent ! Message.AddUser(user)
   }
 
-
-  def userRef(user: User): Future[Option[ActorRef]] = Future.successful{mapping.get(user)}
+  def userRef(user: User): Future[Option[ActorRef]] =
+    (userParent ? Message.GetUser(user)).mapTo[Option[ActorRef]]
 }
