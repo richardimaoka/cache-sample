@@ -1,4 +1,4 @@
-package example
+package example.main
 
 import java.io.{PrintWriter, StringWriter}
 
@@ -31,10 +31,7 @@ object Main {
       for {
         i <- 1 to 10
         topicId <- getTopics(i)
-      } {
-        println(s"${User("user" + i)} subscribing to ${Topic(topicId)}")
-        topicService.subscribeTo(Topic(topicId), User("user" + i))
-      }
+      } topicService.subscribeTo(Topic(topicId), User("user" + i))
 
       topicService.newMessage(Topic("topicC"), User("user1"))
       topicService.allRead(Topic("topicC"), User("user1"))
