@@ -34,8 +34,11 @@ object Main {
         topicId <- getTopics(i)
       } topicService.subscribeTo(Topic(topicId), User("user" + i))
 
+      val processorActor = system.actorOf(TopicMessageProcessorActor.props(topicService), "processor")
 
-      val topicActor = system.actorOf(TopicMessageProcessorActor.props)
+      processorActor ! TopicMessageProcessorActor.Message.NewComment(Topic("topicA"), User("user1"))
+      processorActor ! TopicMessageProcessorActor.Message.NewComment(Topic("topicA"), User("user1"))
+      processorActor ! TopicMessageProcessorActor.Message.ReadAllComments(Topic("topicC"), User("user1"))
 
       Thread.sleep(1000)
     } catch {

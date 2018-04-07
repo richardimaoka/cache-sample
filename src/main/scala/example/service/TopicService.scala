@@ -9,7 +9,7 @@ class TopicService(system: ActorSystem) {
   var mapping: Map[Topic, ActorRef] = Map.empty
   val logger: LoggingAdapter = system.log
 
-  private def pathName(topic: Topic, user: User): String =
+  def pathName(topic: Topic, user: User): String =
     s"/user/${topic.topicId}/${user.userId}"
 
   /**

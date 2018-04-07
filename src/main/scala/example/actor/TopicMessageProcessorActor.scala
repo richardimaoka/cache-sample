@@ -3,6 +3,7 @@ package example.actor
 import akka.actor.{Actor, ActorSelection, Props}
 import example.actor.TopicMessageProcessorActor.{Message => StatusMessage}
 import example.domain.{Topic, User}
+import example.service.TopicService
 
 object TopicMessageProcessorActor {
   /**
@@ -19,10 +20,10 @@ object TopicMessageProcessorActor {
    * Use this to create an instance of the corresponding actor.
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
-  val props: Props = Props(new TopicMessageProcessorActor)
+  def props(topicService: TopicService): Props = Props(new TopicMessageProcessorActor(topicService))
 }
 
-class TopicMessageProcessorActor extends Actor {
+class TopicMessageProcessorActor(topicService: TopicService) extends Actor {
   import TopicMessageProcessorActor._
 
   var topicUserMap: Map[Topic, List[User]] = Map.empty
@@ -48,5 +49,6 @@ class TopicMessageProcessorActor extends Actor {
       topicUserMap = topicUserMap + (topic -> users)
   }
 
-  def getActorSelection(topic: Topic, user: User): ActorSelection = ???
+  def getActorSelection(topic: Topic, user: User): ActorSelection =
+    context.actorSelection(topicService.pathName(topic, user))
 }

@@ -1,6 +1,6 @@
 package example.actor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import example.domain.{Topic, User}
 
 object TopicActor {
@@ -20,17 +20,19 @@ object TopicActor {
   def props(topic: Topic): Props = Props(new TopicActor(topic: Topic))
 }
 
-class TopicActor(topic: Topic) extends Actor {
+class TopicActor(topic: Topic) extends Actor with ActorLogging {
   import TopicActor._
 
   var mapping: Map[User, ActorRef] = Map.empty
 
   def receive = {
     case Message.Subscribe(user) =>
+      log.debug("Adding an actor representing {}'s subscription to {}", user, topic)
       val ref = context.actorOf(UserUnreadStatusActor.props(topic, user), user.userId)
       mapping = mapping + (user -> ref)
 
     case Message.Unsubscribe(user) =>
+      log.debug("Removing an actor representing {}'s subscription to {}", user, topic)
       mapping.get(user).foreach { ref =>
         context.stop(ref)
       }
