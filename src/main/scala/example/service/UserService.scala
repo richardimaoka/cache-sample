@@ -6,6 +6,7 @@ import example.actor.UserUnreadCountActor
 import example.domain.User
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService) {
   val serviceName: String = getClass.getSimpleName
@@ -24,5 +25,5 @@ class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService)
   }
 
 
-  def userRef(user: User): Option[ActorRef] = mapping.get(user)
+  def userRef(user: User): Future[Option[ActorRef]] = Future.successful{mapping.get(user)}
 }

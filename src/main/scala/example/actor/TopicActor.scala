@@ -5,6 +5,8 @@ import example.domain.{Topic, User}
 import example.service.UserService
 import example.actor.TopicUserStatusActor.{Message => StatusMessage}
 
+import scala.util.{Failure, Success}
+
 object TopicActor {
   /**
    * Messages which the corresponding Actor will receive.
@@ -28,6 +30,8 @@ object TopicActor {
 class TopicActor(topic: Topic, userService: UserService) extends Actor with ActorLogging {
   import TopicActor._
 
+  implicit val ec = context.dispatcher
+  
   var mapping: Map[User, ActorRef] = Map.empty
 
   def receive = {
@@ -38,13 +42,17 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      */
     case Message.Subscribe(user) =>
       log.debug("Adding an actor representing {}'s subscription to {}", user, topic)
-      userService.userRef(user) match {
-        case Some(userRef) =>
-          val statusRef =
-            context.actorOf(TopicUserStatusActor.props(topic, user, userRef), user.userId)
-          mapping = mapping + (user -> statusRef)
-        case None =>
-          log.error("{} cannot subscribe to {} as the user count actor does not exist.", user, topic)
+      userService.userRef(user).onComplete{
+        case Success(result) => result match {
+          case Some(userRef) =>
+            val statusRef =
+              context.actorOf(TopicUserStatusActor.props(topic, user, userRef), user.userId)
+            mapping = mapping + (user -> statusRef)
+          case None =>
+            log.error("{} cannot subscribe to {} as the user count actor does not exist.", user, topic)
+        }
+        case Failure(e) =>
+          log.error(e, "ActorRef for {} could not be retrieved.", user, topic)
       }
 
     /**
