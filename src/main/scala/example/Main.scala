@@ -2,53 +2,37 @@ package example
 
 import java.io.{PrintWriter, StringWriter}
 
-import akka.actor.ActorRef
-import example.ProcessorActor.{NewEvent, ReadAllComments}
+import example.domain.{Topic, User}
+import example.service.{TopicService, UserService}
 
 object Main {
+  def getTopics(i: Int): List[String] =
+    if (i % 3 == 0)      List("topicA", "topicB", "topicC")
+    else if (i % 3 == 1) List("topicB", "topicC")
+    else                 List("topicC")
+
   def main(args: Array[String]): Unit = {
     implicit val system = akka.actor.ActorSystem()
     implicit val ec = system.dispatcher
 
     try {
-      val topicUserListActor = system.actorOf(TopicToUserListActor.props)
-      val processActor = system.actorOf(ProcessorActor.props(topicUserListActor))
-
-      val users = for {
-        i <- 1 to 10
-      } yield "user" + i
-
-      val topics = List(
-        "topicA", "topicB", "topicC"
-      )
-
-      var userToCountActor: Map[String, ActorRef] = Map.empty
-      users.foreach{
-        user => 
-          val ref = system.actorOf(UserUnreadCountActor.props(user))
-          userToCountActor = userToCountActor.updated(user, ref)
-      }
+      val topicService = new TopicService(system)
+      val userService = new UserService(system)
 
       for {
-        user <- users
-        topic <- topics
-      }  {
-        val couterRef = userToCountActor.get(user)
-        couterRef.foreach{ ref =>
-          system.actorOf(UserUnreadFlagActor.props(user, topic, ref))
-        }
-      }
+        topicId <- List("topicA", "topicB", "topicC")
+      } topicService.addTopic(Topic(topicId))
 
-      processActor ! NewEvent("topicA", NewEvent)
-      processActor ! NewEvent("topicB", NewEvent)
-      processActor ! NewEvent("topicC", NewEvent)
-      processActor ! NewEvent("topicA", ReadAllComments)
-      processActor ! NewEvent("topicB", ReadAllComments)
-      processActor ! NewEvent("topicC", ReadAllComments)
-      processActor ! NewEvent("topicA", NewEvent)
-      processActor ! NewEvent("topicA", NewEvent)
-      processActor ! NewEvent("topicA", NewEvent)
+      for {
+        i <- 1 to 10
+      } userService.addUser(User("user" + i))
 
+      for {
+        i <- 1 to 10
+        topicId <- getTopics(i)
+      } topicService.subscribeTo(Topic(topicId), User("user" + i))
+
+      Thread.sleep(1000)
     } catch {
       case t: Throwable =>
         val sw = new StringWriter

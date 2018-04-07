@@ -5,7 +5,7 @@ import example.domain.{Topic, User}
 
 object TopicActor {
   /**
-   * Events which the corresponding Actor will receive.
+   * Messages which the corresponding Actor will receive.
    */
   sealed trait Message
   object Message {
@@ -27,7 +27,7 @@ class TopicActor(topic: Topic) extends Actor {
 
   def receive = {
     case Message.Subscribe(user) =>
-      val ref = context.actorOf(UserUnreadStatusActor.props, user.userId)
+      val ref = context.actorOf(UserUnreadStatusActor.props(topic, user), user.userId)
       mapping = mapping + (user -> ref)
 
     case Message.Unsubscribe(user) =>

@@ -6,7 +6,7 @@ import example.domain.{Topic, User}
 
 object TopicEventProcessorActor {
   /**
-   * Events which TopicEventProcessorActor will receive.
+   * Messages which TopicEventProcessorActor will receive.
    */
   sealed trait Event
   object Event{
