@@ -6,14 +6,15 @@ import example.actor.UserUnreadCountActor
 import example.domain.User
 
 class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService) {
+  val serviceName: String = getClass.getSimpleName
   var mapping: Map[User, ActorRef] = Map.empty
   val logger: LoggingAdapter = system.log
 
   /**
-   * Create a per-user aggregator actor
+   * Add a user who can count the unread topics
    */
   def addUser(user: User): Unit = {
-    logger.debug("Adding an actor for {}", user)
+    logger.debug("{}: Adding {}", serviceName, user)
     val ref = system.actorOf(
       UserUnreadCountActor.props(user, batchUpdaterService.batchUpdaterRef)
     )
