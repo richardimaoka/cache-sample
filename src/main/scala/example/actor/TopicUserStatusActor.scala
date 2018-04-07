@@ -3,7 +3,7 @@ package example.actor
 import akka.actor.{ActorRef, FSM, Props}
 import example.domain.{Topic, User}
 
-object UserUnreadStatusActor {
+object TopicUserStatusActor {
   /**
    * Messages which the corresponding actor will receive.
    */
@@ -28,12 +28,12 @@ object UserUnreadStatusActor {
    * Return an immutable Props instance so that it can be passed around among actors if necessary.
    */
   def props(topic: Topic, user: User, userRef: ActorRef): Props =
-    Props(new UserUnreadStatusActor(topic, user, userRef))
+    Props(new TopicUserStatusActor(topic, user, userRef))
 }
 
-class UserUnreadStatusActor(topic: Topic, user: User, userRef: ActorRef)
-  extends FSM[UserUnreadStatusActor.State, UserUnreadStatusActor.Data] {
-  import UserUnreadStatusActor._
+class TopicUserStatusActor(topic: Topic, user: User, userRef: ActorRef)
+  extends FSM[TopicUserStatusActor.State, TopicUserStatusActor.Data] {
+  import TopicUserStatusActor._
 
   startWith(State.Unread, Data(userRef))
 

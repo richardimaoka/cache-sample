@@ -2,7 +2,6 @@ package example
 
 import java.io.{PrintWriter, StringWriter}
 
-import example.actor.TopicMessageProcessorActor
 import example.domain.{Topic, User}
 import example.service.{BatchUpdaterService, TopicService, UserService}
 
@@ -32,13 +31,14 @@ object Main {
       for {
         i <- 1 to 10
         topicId <- getTopics(i)
-      } topicService.subscribeTo(Topic(topicId), User("user" + i))
+      } {
+        println(s"${User("user" + i)} subscribing to ${Topic(topicId)}")
+        topicService.subscribeTo(Topic(topicId), User("user" + i))
+      }
 
-      val processorActor = system.actorOf(TopicMessageProcessorActor.props(topicService), "processor")
-
-      processorActor ! TopicMessageProcessorActor.Message.NewComment(Topic("topicA"), User("user1"))
-      processorActor ! TopicMessageProcessorActor.Message.NewComment(Topic("topicA"), User("user1"))
-      processorActor ! TopicMessageProcessorActor.Message.ReadAllComments(Topic("topicC"), User("user1"))
+      topicService.newMessage(Topic("topicC"), User("user1"))
+      topicService.allRead(Topic("topicC"), User("user1"))
+      topicService.newMessage(Topic("topicC"), User("user1"))
 
       Thread.sleep(1000)
     } catch {
