@@ -85,5 +85,18 @@ class MySpec() extends TestKit(ActorSystem("MySpec")) with ImplicitSender
 
       expectMsg(200.milliseconds, expected)
     }
+
+    "A new subscription will result updated unread count" in {
+      val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
+
+      val user3 = User("user3")
+      topicService.subscribeTo(Topic("topicA"), user3)
+      topicService.setUnread(Topic("topicA"), user3)
+
+      val user3Unread = countUnreadTopics(subscriptions.get(user3).get)
+      val expected = constructCountData(subscriptions) + (user3 -> (user3Unread + 1))
+
+      expectMsg(200.milliseconds, expected)
+    }
   }
 }

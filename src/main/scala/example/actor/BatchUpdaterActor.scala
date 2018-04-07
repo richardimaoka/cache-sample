@@ -50,7 +50,7 @@ class BatchUpdaterActor
 
   when(State.ColdStandBy) {
     case Event(Message.Update(user, unreadCount), data: Data) =>
-      goto(State.WarmStandBy) using Map(user -> unreadCount)
+      goto(State.WarmStandBy) using stateData + (user -> unreadCount)
   }
 
   def updateFirebase(data: Data): Unit =
