@@ -28,7 +28,7 @@ class UserService(system: ActorSystem, batchUpdaterService: BatchUpdaterService)
    * Remove a user from the service
    */
   def removeUser(user: User): Unit = {
-    userParent ! Message.AddUser(user)
+    userParent ! Message.RemoveUser(user)
   }
 
   def userRef(user: User): Future[Option[ActorRef]] =
