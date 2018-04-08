@@ -32,7 +32,7 @@ class BasicSpec()
     User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), false)),
     User("user2") -> List((Topic("topicA"), true),  (Topic("topicB"), false), (Topic("topicD"), true)),
     User("user3") -> List((Topic("topicD"), true),  (Topic("topicE"), true)),
-    User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), true)),
+    User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), false)),
     User("user5") -> List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true), (Topic("topicG"), true)),
     User("user6") -> List((Topic("topicB"), true),  (Topic("topicD"), false), (Topic("topicE"), true)),
     User("user7") -> List((Topic("topicC"), false), (Topic("topicE"), true)),
@@ -128,7 +128,6 @@ class BasicSpec()
     }
   }
 
-
   "Subscribe" must {
     "not do anything" when {
       "user already subscribed to the toic" in {
@@ -156,41 +155,49 @@ class BasicSpec()
         expectMsg(200.milliseconds, expected)
       }
     }
-    
   }
 
-  //  "AllRead" when {
-  //    "invoked single time" must {
-  //      "Decrease the unread count for a user/topic" in {
-  //
-  //      }
-  //      "does not change anything for already subscribed topic" in {
-  //        //expectNoMsg
-  //      }
-  //    }
-  //
-  //    "invoked multiple times" must {
-  //      "Decrease the unread count for multiple users/topics" in {
-  //
-  //      }
-  //    }
-  //  }
-  //
-  //  "NewComment" when {
-  //    "invoked single time" must {
-  //      "Increase the unread count for all subscribers except the updating user" in {
-  //
-  //      }
-  //      "does not do anything if all subscribers had unread" in {
-  //
-  //      }
-  //    }
-  //
-  //    "invoked multiple times" must {
-  //      "Increase the unread count for all subscribers except the updating user" in {
-  //
-  //      }
-  //    }
-  //  }
+  "AllRead" must {
+    "not do anything" when {
+      "the user already read the topic" in {
+        val user4 = User("user4")
+        val topicG = Topic("topicG")
+
+        topicService.allRead(topicG, user4)
+
+        expectNoMessage(200.milliseconds)
+      }
+    }
+
+    "decrease the unread count" when {
+      "the user hand unread items for the topic" in {
+        val user4 = User("user4")
+        val topicA = Topic("topicA")
+
+        topicService.allRead(topicA, user4)
+
+        val user4Unread = countUnreadTopics(initialSubscriptions(user4)) - 1 //decrease by 1
+        val expected = Map(user4 -> user4Unread)
+        expectMsg(200.milliseconds, expected)
+      }
+    }
+  }
+
+//  "NewComment" when {
+//    "invoked single time" must {
+//      "Increase the unread count for all subscribers except the updating user" in {
+//
+//      }
+//      "does not do anything if all subscribers had unread" in {
+//
+//      }
+//    }
+//
+//    "invoked multiple times" must {
+//      "Increase the unread count for all subscribers except the updating user" in {
+//
+//      }
+//    }
+//  }
 
 }
