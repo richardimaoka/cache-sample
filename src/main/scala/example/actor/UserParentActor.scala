@@ -21,23 +21,19 @@ object UserParentActor {
 class UserParentActor(batchUpdater: ActorRef) extends Actor with ActorLogging {
   import UserParentActor._
 
-  var mapping: Map[User, ActorRef] = Map.empty
-
   def receive = {
     case Message.GetUser(user) =>
-      sender() ! mapping.get(user)
+      sender() ! context.child(user.userId)
 
     case Message.AddUser(user) =>
       log.debug(s"Adding child for ${user}")
-      val ref = context.actorOf(UserUnreadCountActor.props(user, batchUpdater), user.userId)
-      mapping = mapping.updated(user, ref)
+      context.actorOf(UserUnreadCountActor.props(user, batchUpdater), user.userId)
 
     case Message.RemoveUser(user) =>
       log.debug(s"Removing child for ${user}")
-      mapping.get(user) match {
+      context.child(user.userId) match {
         case Some(ref) =>
           context.stop(ref)
-          mapping = mapping - user
         case None =>
           log.error("{} is not initialized yet", user)
       }
