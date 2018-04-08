@@ -21,36 +21,11 @@ class BasicSpec()
   val userService = new UserService(system, batchUpdaterService)
   val topicService = new TopicService(system, userService)
 
+  /************************************************************************************************
+   * Test data section
+   ***********************************************************************************************/
   val users  = for { i <- 1 to 10 } yield User("user" + i)
   val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G") } yield Topic("topic" + c)
-
-
-  override def afterAll(): Unit = {
-    println("afterAll")
-    TestKit.shutdownActorSystem(system)
-  }
-
-  override def beforeEach(): Unit = {
-    println("beforeEach")
-    users.foreach { user => userService.addUser(user)}
-    topics.foreach { topic => topicService.addTopic(topic)}
-
-    val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-
-    for {
-      user <- users
-      (topic, unreadFlag) <- subscriptions.get(user).get
-    } {
-      topicService.subscribeTo(topic, user)
-      if (unreadFlag) topicService.setUnread(topic, user)
-    }
-  }
-
-  override def afterEach(): Unit = {
-    println("afterEach")
-    users.foreach { user => userService.removeUser(user) }
-    topics.foreach { topic => topicService.addTopic(topic)}
-  }
 
   /**
    * Mapping from user to list of subscribed topics and its read/unread status (true = unread)
@@ -90,19 +65,49 @@ class BasicSpec()
       case (user, list) => user -> countUnreadTopics(list)
     }
 
+  /************************************************************************************************
+   * Test environment setup section
+   ***********************************************************************************************/
+  override def afterAll(): Unit = {
+    TestKit.shutdownActorSystem(system)
+  }
+
+  override def beforeEach(): Unit = {
+    users.foreach { user => userService.addUser(user)}
+    topics.foreach { topic => topicService.addTopic(topic)}
+
+    val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
+
+    for {
+      user <- users
+      (topic, unreadFlag) <- subscriptions.get(user).get
+    } {
+      topicService.subscribeTo(topic, user)
+      if (unreadFlag) topicService.setUnread(topic, user)
+    }
+  }
+
+  override def afterEach(): Unit = {
+    users.foreach { user => userService.removeUser(user) }
+    topics.foreach { topic => topicService.removeTopic(topic)}
+  }
+
+
+  /************************************************************************************************
+   * Test cases
+   ***********************************************************************************************/
+
   /**
    * In case the whole cache process is restarted, we should be able to query into SQL DB,
    * and pass all topic-read/unread status for all users, then initialize the cache accordingly
-   *
-   * `val subscriptions` represents the data from SQL DB.
    */
   "SetUnread" must {
     "initialize unread status correctly" in {
+      //SetUnread is already sent within beforeEach
       val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
       val expected = constructCountData(subscriptions)
 
       expectMsg(200.milliseconds, expected)
-      println("expectmsg receoved")
     }
   }
 
