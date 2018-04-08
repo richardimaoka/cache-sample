@@ -38,6 +38,10 @@
 
 なんかSpecの書き方(whenの位置)がおかしくなってしまいました…
 
+### performance test
+
+やろうと思ってたんですが時間がなくてできませんでした…
+
 ## コード
 
 今回のコードは単純なので、Actorのみに全てのロジックをもたせてもよいかと思いましたが、
@@ -59,7 +63,7 @@ UserService ----------------------------------------------
 ```
 
 以下の2つのメソッドでUserのActor(`UserUnreadCounterActor`)を追加または削除できます。
-前提として、あるuserに対するあらゆる通知が来る前に、`addUser(user: User)`がよばれているという想定をしています。
+前提として、あるuserに対するあらゆる通知が来る前に、`addUser(user: User)`がよばれているという想定をしています。([unread-count per user](https://github.com/richardimaoka/cache-sample/blob/master/README.md#unread-count-per-user)を参照)
 
 ```scala
 def addUser(user: User): Unit
