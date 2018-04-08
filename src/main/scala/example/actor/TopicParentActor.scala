@@ -36,11 +36,18 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
   }
 
   def receive = {
+    /**
+     * When a `topic` is added
+     */
     case Message.AddTopic(topic) =>
       log.debug(s"Adding child for ${topic}")
       val ref = context.actorOf(TopicActor.props(topic, userService), topic.topicId)
       mapping = mapping.updated(topic, ref)
 
+    /**
+     * When a `topic` is removed.
+     * All subscribed users should see the unread status updated.
+     */
     case Message.RemoveTopic(topic) =>
       log.debug(s"Removing child for ${topic}")
       mapping.get(topic) match {
@@ -51,7 +58,9 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
           log.error("{} is not initialized yet", topic)
       }
 
-
+    /**
+     * When a `user` subscribes to the `topic`.
+     */
     case Message.Subscribe(topic, user) =>
       log.debug("{} subscribing to {}", user, topic)
       mapping.get(topic) match {
@@ -61,6 +70,9 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
           log.error("{} is not initialized yet", topic)
       }
 
+    /**
+     * When a `user` unsubscribes from the `topic`.
+     */
     case Message.Unsubscribe(topic, user) =>
       log.debug("{} unsubscribing from {}", user, topic)
       mapping.get(topic) match {
@@ -70,6 +82,10 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
           log.error("{} is not initialized yet", topic)
       }
 
+    /**
+     * When a `user` read all comments of the topic.
+     * The unread status for the `user` and the `topic` should be set to "read".
+     */
     case Message.AllRead(topic, user) =>
       log.debug("{} subscribing to {}", user, topic)
       mapping.get(topic) match {
@@ -79,6 +95,10 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
           log.error("{} is not initialized yet", topic)
       }
 
+    /**
+     * When a new comment for the `topic` is made by the `updatingUser`.
+     * All subscribing users need to be notified except the `updatingUser`.
+     */
     case Message.NewComment(topic, updatingUser) =>
       log.debug("{} add a new comment to {}", updatingUser, topic)
       mapping.get(topic) match {
@@ -88,6 +108,10 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
           log.error("{} is not initialized yet", topic)
       }
 
+    /**
+     * When the cache process is started up, or when the unread status needs to be refreshed
+     * SetUnread is used to set the unread status for the user and the topic
+     */
     case Message.SetUnread(topic, user) =>
       log.debug("{} set unread to {}", user, topic)
       mapping.get(topic) match {
