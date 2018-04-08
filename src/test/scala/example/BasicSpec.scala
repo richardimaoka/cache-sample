@@ -27,9 +27,10 @@ class BasicSpec()
   val users  = for { i <- 1 to 10 } yield User("user" + i)
   val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G") } yield Topic("topic" + c)
 
+  //Boolean = true means unread, and false means already-read
   val initialSubscriptionMap: Map[User, List[(Topic, Boolean)]] = Map(
-    User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true)),
-    User("user2") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicE"), true), (Topic("topicG"), true)),
+    User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), false)),
+    User("user2") -> List((Topic("topicA"), true),  (Topic("topicB"), false), (Topic("topicD"), true)),
     User("user3") -> List((Topic("topicD"), true),  (Topic("topicE"), true)),
     User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), true)),
     User("user5") -> List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true), (Topic("topicG"), true)),
@@ -93,46 +94,69 @@ class BasicSpec()
    * and pass all topic-read/unread status for all users, then initialize the cache accordingly
    */
   "SetUnread" must {
-    "initialize unread status correctly" in {
-      //SetUnread is already sent within beforeEach
-      val expected = constructCountData(initialSubscriptionMap)
+    "initialize unread status correctly" when {
+      "beforeAll initialized the test" in{
+        val expected = constructCountData(initialSubscriptionMap)
 
-      expectMsg(200.milliseconds, expected)
+        expectMsg(200.milliseconds, expected)
+      }
     }
-  }
 
-
-  "Subscribe" when {
-    "invoked single time" must {
-      "Increase the unread count for a user/topic" in {
-        /**
-         * Only the diff from the previous batch update should be reported
-         */
+    "increase the unread count for user/topic" when {
+      "sent for already-read user/topic" in{
         val user1 = User("user1")
-        val topicD = Topic("topicD")
-        topicService.subscribeTo(topicD, user1)
-        topicService.setUnread(topicD, user1)
+        val topicC = Topic("topicC")
+        topicService.setUnread(topicC, user1) //topic C is unread = false (i.e. already read) initially
 
+        //Only the diff from the previous batch update should be reported
         val user1Unread = countUnreadTopics(initialSubscriptions(user1))
         val expected = Map(user1 -> (user1Unread + 1))
 
         expectMsg(200.milliseconds, expected)
-
       }
-      "does not change anything for already subscribed topic" in {
+    }
+
+    "does nothing" when {
+      "sent for unread user/topic" in{
         val user1 = User("user1")
-        val topicD = Topic("topicD")
-        topicService.subscribeTo(topicD, user1)
-        topicService.setUnread(topicD, user1)
+        val topicC = Topic("topicC")
+
+        topicService.setUnread(topicC, user1) //topic C is unread = true as done in the above test case
+
+        expectNoMessage(200.milliseconds)
+      }
+    }
+  }
+
+
+  "Subscribe" must {
+    "not do anything" when {
+      "user already subscribed to the toic" in {
+        val user2 = User("user2")
+        val topicA = Topic("topicA") //user2 already subscribed to topicA, and unread = true
+        val topicB = Topic("topicB") //user2 already subscribed to topicA, and unread = false
+
+        topicService.subscribeTo(topicA, user2)
+        topicService.subscribeTo(topicB, user2)
 
         expectNoMessage(200.milliseconds)
       }
     }
 
-    "invoked multiple times" must {
-      "Increase the unread count for multiple users/topics" in {
+    "let NewComment increase the unread count" when {
+      "user newly subscribed to the topic" in {
+        val user2 = User("user2")
+        val user3 = User("user3")
+        val topicE = Topic("topicE")            //user2 did not subscribe to topicE
+
+        topicService.subscribeTo(topicE, user2) //user2
+        topicService.newMessage(topicE, user3)  //user3 should send a new comment, not user 2
+
+        val expected = Map(user2 -> 3)
+        expectMsg(200.milliseconds, expected)
       }
     }
+    
   }
 
   //  "AllRead" when {
