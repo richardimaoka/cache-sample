@@ -114,3 +114,34 @@ def unsubscribeFrom(topic: Topic, user: User): Unit
 def newComment(topic: Topic, updatingUser: User): Unit
 def allRead(topic: Topic, user: User): Unit 
 ```
+
+### Data flow
+
+#### AllRead/NewComment
+
+TopicServiceの`newComment/allRead`メソッドが呼ばれた時、以下の画像の通り:
+
+- `TopicParentActor` -> `TopicActor` -> `TopicUserStatusActor`
+
+という流れでActor間でメッセージが渡されます。
+
+`AllRead/NewComment`メッセージが送られる以前に`AddTopic`と`Subscribe`メッセージが送られ、当該TopicとそのTopicに対するUserのSubscriptionが完了している必要があります。それ以前に`AllRead/NewComment`が送られた場合エラーメッセージが表示されます。
+
+<img width=600 src="https://user-images.githubusercontent.com/7414320/38472296-d34b1fc0-3bb8-11e8-8e61-3009b2c2d08c.png">
+<img width=600 src="https://user-images.githubusercontent.com/7414320/38472299-db7ece76-3bb8-11e8-8709-bbdb7355ff49.png">
+
+#### unread-count per user
+
+そして`TopicUserStatus`が`AllRead/NewComment`メッセージを受け取ると、
+当該のUserの既読数を更新するため`UserUnreadCountActor`に`Increment`もしくは`Decrement`メッセージを送ります。
+そのためには`UserUnreadCountActor`が事前に存在している必要があるので、
+あるuserに対するあらゆる通知が来る前に`UserService`の`addUser(user: User)`がよばれ`UserUnreadCountActor`の生成が完了しているという想定をしています。()
+
+<img width=600 src="https://user-images.githubusercontent.com/7414320/38472303-e1ae5686-3bb8-11e8-9d26-9de953e28c93.png">
+
+#### Periodical notification to firebase
+
+100ミリ秒ごとに`BatchUpdaterActor`は`updateFirebase`を呼びます。現在は特にこのメソッドは何もしていません。
+
+<img width=600 src="https://user-images.githubusercontent.com/7414320/38472306-03a58aa2-3bb9-11e8-834a-b6722748f445.png">
+
