@@ -71,7 +71,7 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      * Assumption is that the child actor already exists, otherwise, log an error.
      */
     case Message.Unsubscribe(user) =>
-      log.debug("Removing an actor representing {}'s subscription to {}", user, topic)
+      log.info("Removing an actor representing {}'s subscription to {}", user, topic)
       mapping.get(user) match {
         case Some(ref) =>
           context.stop(ref)

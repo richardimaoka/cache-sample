@@ -11,11 +11,11 @@ import scala.concurrent.duration._
 
 class BasicSpec()
   extends TestKit(ActorSystem("BasicSpec"))
-  with ImplicitSender
-  with WordSpecLike
-  with Matchers
-  with BeforeAndAfterAll
-  with BeforeAndAfterEach {
+    with ImplicitSender
+    with WordSpecLike
+    with Matchers
+    with BeforeAndAfterAll
+    with BeforeAndAfterEach {
 
   val batchUpdaterService = new TestBatchUpdaterService(system, testActor)
   val userService = new UserService(system, batchUpdaterService)
@@ -72,7 +72,7 @@ class BasicSpec()
     TestKit.shutdownActorSystem(system)
   }
 
-  override def beforeEach(): Unit = {
+  override def beforeAll(): Unit = {
     users.foreach { user => userService.addUser(user)}
     topics.foreach { topic => topicService.addTopic(topic)}
 
@@ -86,12 +86,6 @@ class BasicSpec()
       if (unreadFlag) topicService.setUnread(topic, user)
     }
   }
-
-  override def afterEach(): Unit = {
-    users.foreach { user => userService.removeUser(user) }
-    topics.foreach { topic => topicService.removeTopic(topic)}
-  }
-
 
   /************************************************************************************************
    * Test cases
@@ -112,67 +106,68 @@ class BasicSpec()
   }
 
 
-//  "Subscribe" when {
-//    "invoked single time" must {
-//      "Increase the unread count for a user/topic" in {
-//        /**
-//         * Only the diff from the previous batch update should be reported
-//         */
-//          val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-//
-//          val user3 = User("user3")
-//          topicService.subscribeTo(Topic("topicA"), user3)
-//          topicService.setUnread(Topic("topicA"), user3)
-//
-//          val user3Unread = countUnreadTopics(subscriptions.get(user3).get)
-//          val expected = Map(user3 -> (user3Unread + 1))
-//
-//          expectMsg(200.milliseconds, expected)
-//
-//      }
-//      "does not change anything for already subscribed topic" in {
-//        //expectNoMsg
-//      }
-//    }
-//
-//    "invoked multiple times" must {
-//      "Increase the unread count for multiple users/topics" in {
-//      }
-//    }
-//  }
-//
-//  "AllRead" when {
-//    "invoked single time" must {
-//      "Decrease the unread count for a user/topic" in {
-//
-//      }
-//      "does not change anything for already subscribed topic" in {
-//        //expectNoMsg
-//      }
-//    }
-//
-//    "invoked multiple times" must {
-//      "Decrease the unread count for multiple users/topics" in {
-//
-//      }
-//    }
-//  }
-//
-//  "NewComment" when {
-//    "invoked single time" must {
-//      "Increase the unread count for all subscribers except the updating user" in {
-//
-//      }
-//      "does not do anything if all subscribers had unread" in {
-//
-//      }
-//    }
-//
-//    "invoked multiple times" must {
-//      "Increase the unread count for all subscribers except the updating user" in {
-//
-//      }
-//    }
-//  }
+  "Subscribe" when {
+    "invoked single time" must {
+      "Increase the unread count for a user/topic" in {
+        /**
+         * Only the diff from the previous batch update should be reported
+         */
+        val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
+
+        val user1 = User("user1")
+        val topicD = Topic("topicD")
+        topicService.subscribeTo(topicD, user1)
+        topicService.setUnread(topicD, user1)
+
+        val user1Unread = countUnreadTopics(subscriptions.get(user1).get)
+        val expected = Map(user1 -> (user1Unread + 1))
+
+        expectMsg(200.milliseconds, expected)
+
+      }
+      "does not change anything for already subscribed topic" in {
+        //expectNoMsg
+      }
+    }
+
+    "invoked multiple times" must {
+      "Increase the unread count for multiple users/topics" in {
+      }
+    }
+  }
+
+  //  "AllRead" when {
+  //    "invoked single time" must {
+  //      "Decrease the unread count for a user/topic" in {
+  //
+  //      }
+  //      "does not change anything for already subscribed topic" in {
+  //        //expectNoMsg
+  //      }
+  //    }
+  //
+  //    "invoked multiple times" must {
+  //      "Decrease the unread count for multiple users/topics" in {
+  //
+  //      }
+  //    }
+  //  }
+  //
+  //  "NewComment" when {
+  //    "invoked single time" must {
+  //      "Increase the unread count for all subscribers except the updating user" in {
+  //
+  //      }
+  //      "does not do anything if all subscribers had unread" in {
+  //
+  //      }
+  //    }
+  //
+  //    "invoked multiple times" must {
+  //      "Increase the unread count for all subscribers except the updating user" in {
+  //
+  //      }
+  //    }
+  //  }
 
 }
