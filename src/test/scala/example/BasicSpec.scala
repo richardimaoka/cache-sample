@@ -27,43 +27,40 @@ class BasicSpec()
   val users  = for { i <- 1 to 10 } yield User("user" + i)
   val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G") } yield Topic("topic" + c)
 
-  /**
-   * Mapping from user to list of subscribed topics and its read/unread status (true = unread)
-   */
-  private def getTopicSubscriptionStatus(user: User): List[(Topic, Boolean)] = {
-    try {
-      val i = user.userId.split("user")(1).toInt
-      (i % 10) match {
-        case 1 => List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true))
-        case 2 => List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicE"), true), (Topic("topicG"), true))
-        case 3 => List((Topic("topicD"), true),  (Topic("topicE"), true))
-        case 4 => List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), true))
-        case 5 => List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true), (Topic("topicG"), true))
-        case 6 => List((Topic("topicB"), true),  (Topic("topicD"), false), (Topic("topicE"), true))
-        case 7 => List((Topic("topicC"), false), (Topic("topicE"), true))
-        case 8 => List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true), (Topic("topicE"), true))
-        case 9 => List((Topic("topicD"), true),  (Topic("topicF"), true),  (Topic("topicG"), false))
-        case 0 => List((Topic("topicA"), true))
-      }
-    } catch {
-      case e: Exception =>
-        println(s"error on parsing ${user}")
-        throw e
-    }
-  }
+  val initialSubscriptionMap: Map[User, List[(Topic, Boolean)]] = Map(
+    User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true)),
+    User("user2") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicE"), true), (Topic("topicG"), true)),
+    User("user3") -> List((Topic("topicD"), true),  (Topic("topicE"), true)),
+    User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), true)),
+    User("user5") -> List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true), (Topic("topicG"), true)),
+    User("user6") -> List((Topic("topicB"), true),  (Topic("topicD"), false), (Topic("topicE"), true)),
+    User("user7") -> List((Topic("topicC"), false), (Topic("topicE"), true)),
+    User("user8") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true), (Topic("topicE"), true)),
+    User("user9") -> List((Topic("topicD"), true),  (Topic("topicF"), true),  (Topic("topicG"), false)),
+    User("user10") -> List((Topic("topicA"), true))
+  )
 
+  def initialSubscriptions(user: User): List[(Topic, Boolean)] =
+    initialSubscriptionMap.getOrElse(user, throw new Exception(s"$user does not exist"))
+  
   private def countUnreadTopics(l: List[(Topic, Boolean)]): Int =
     l.count{ case (_, unread) => unread }
-
-  private def constructSubscription(users: Seq[User]): Map[User, List[(Topic, Boolean)]] =
-    users.map {
-      user => user -> getTopicSubscriptionStatus(user)
-    }.toMap
 
   private def constructCountData(subscriptions: Map[User, List[(Topic, Boolean)]]): BatchUpdaterActor.Data =
     subscriptions.map {
       case (user, list) => user -> countUnreadTopics(list)
     }
+
+  def validateInitialSubscriptionMap(): Unit = {
+    for {
+      user <- users
+      subscriptions = initialSubscriptionMap
+        .getOrElse(user, throw new Exception(s"Validation failed!!: You need to define $user in `val initialSubscriptionMap`."))
+      (topic, _) <- subscriptions
+    } topics
+      .find(_ == topic)
+      .getOrElse(throw new Exception(s"Validation failed!!: $user subscribes to an invalid $topic. Update `val initialSubscriptionMap`."))
+  }
 
   /************************************************************************************************
    * Test environment setup section
@@ -73,14 +70,14 @@ class BasicSpec()
   }
 
   override def beforeAll(): Unit = {
+    validateInitialSubscriptionMap()
+
     users.foreach { user => userService.addUser(user)}
     topics.foreach { topic => topicService.addTopic(topic)}
 
-    val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-
     for {
       user <- users
-      (topic, unreadFlag) <- subscriptions.get(user).get
+      (topic, unreadFlag) <- initialSubscriptions(user)
     } {
       topicService.subscribeTo(topic, user)
       if (unreadFlag) topicService.setUnread(topic, user)
@@ -98,8 +95,7 @@ class BasicSpec()
   "SetUnread" must {
     "initialize unread status correctly" in {
       //SetUnread is already sent within beforeEach
-      val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-      val expected = constructCountData(subscriptions)
+      val expected = constructCountData(initialSubscriptionMap)
 
       expectMsg(200.milliseconds, expected)
     }
@@ -112,14 +108,12 @@ class BasicSpec()
         /**
          * Only the diff from the previous batch update should be reported
          */
-        val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-
         val user1 = User("user1")
         val topicD = Topic("topicD")
         topicService.subscribeTo(topicD, user1)
         topicService.setUnread(topicD, user1)
 
-        val user1Unread = countUnreadTopics(subscriptions.get(user1).get)
+        val user1Unread = countUnreadTopics(initialSubscriptions(user1))
         val expected = Map(user1 -> (user1Unread + 1))
 
         expectMsg(200.milliseconds, expected)
