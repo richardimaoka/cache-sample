@@ -38,7 +38,7 @@
 
 なんかSpecの書き方(whenの位置)がおかしくなってしまいました…
 
-### performance test
+### performance/scenario test
 
 やろうと思ってたんですが時間がなくてできませんでした…
 
