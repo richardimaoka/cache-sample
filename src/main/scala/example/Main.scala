@@ -33,9 +33,9 @@ object Main {
         topicId <- getTopics(i)
       } topicService.subscribeTo(Topic(topicId), User("user" + i))
 
-      topicService.newMessage(Topic("topicC"), User("user1"))
+      topicService.newComment(Topic("topicC"), User("user1"))
       topicService.allRead(Topic("topicC"), User("user1"))
-      topicService.newMessage(Topic("topicC"), User("user1"))
+      topicService.newComment(Topic("topicC"), User("user1"))
 
       Thread.sleep(1000)
     } catch {

@@ -37,10 +37,10 @@ class TopicService(system: ActorSystem, userService: UserService) {
     topicParent ! Message.Unsubscribe(topic, user)
 
   /**
-   * Let the user send a new message in for the topic.
+   * Let the user send a new comment in for the topic.
    * If the topic is not initialized inside this service, log an error message.
    */
-  def newMessage(topic: Topic, updatingUser: User): Unit =
+  def newComment(topic: Topic, updatingUser: User): Unit =
     topicParent ! Message.NewComment(topic, updatingUser)
 
   /**

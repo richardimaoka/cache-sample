@@ -25,18 +25,18 @@ class BasicSpec()
    * Test data section
    ***********************************************************************************************/
   val users  = for { i <- 1 to 10 } yield User("user" + i)
-  val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G") } yield Topic("topic" + c)
+  val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G", "H", "I") } yield Topic("topic" + c)
 
   //Boolean = true means unread, and false means already-read
   val initialSubscriptionMap: Map[User, List[(Topic, Boolean)]] = Map(
-    User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), false)),
+    User("user1") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), false), (Topic("topicH"), true)),
     User("user2") -> List((Topic("topicA"), true),  (Topic("topicB"), false), (Topic("topicD"), true)),
     User("user3") -> List((Topic("topicD"), true),  (Topic("topicE"), true)),
-    User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), false)),
-    User("user5") -> List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true), (Topic("topicG"), true)),
-    User("user6") -> List((Topic("topicB"), true),  (Topic("topicD"), false), (Topic("topicE"), true)),
+    User("user4") -> List((Topic("topicA"), true),  (Topic("topicC"), false), (Topic("topicG"), false), (Topic("topicH"), false), (Topic("topicI"), false)),
+    User("user5") -> List((Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicF"), true),  (Topic("topicG"), true),  (Topic("topicI"), false)),
+    User("user6") -> List((Topic("topicB"), true),  (Topic("topicD"), false), (Topic("topicE"), true),  (Topic("topicI"), false)),
     User("user7") -> List((Topic("topicC"), false), (Topic("topicE"), true)),
-    User("user8") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true), (Topic("topicE"), true)),
+    User("user8") -> List((Topic("topicA"), true),  (Topic("topicB"), true),  (Topic("topicC"), true),  (Topic("topicE"), true), (Topic("topicH"), true)),
     User("user9") -> List((Topic("topicD"), true),  (Topic("topicF"), true),  (Topic("topicG"), false)),
     User("user10") -> List((Topic("topicA"), true))
   )
@@ -149,7 +149,7 @@ class BasicSpec()
         val topicE = Topic("topicE")            //user2 did not subscribe to topicE
 
         topicService.subscribeTo(topicE, user2) //user2
-        topicService.newMessage(topicE, user3)  //user3 should send a new comment, not user 2
+        topicService.newComment(topicE, user3)  //user3 should send a new comment, not user 2
 
         val expected = Map(user2 -> 3)
         expectMsg(200.milliseconds, expected)
@@ -178,26 +178,39 @@ class BasicSpec()
 
         val user4Unread = countUnreadTopics(initialSubscriptions(user4)) - 1 //decrease by 1
         val expected = Map(user4 -> user4Unread)
+
         expectMsg(200.milliseconds, expected)
       }
     }
   }
 
-//  "NewComment" when {
-//    "invoked single time" must {
-//      "Increase the unread count for all subscribers except the updating user" in {
-//
-//      }
-//      "does not do anything if all subscribers had unread" in {
-//
-//      }
-//    }
-//
-//    "invoked multiple times" must {
-//      "Increase the unread count for all subscribers except the updating user" in {
-//
-//      }
-//    }
-//  }
+  "NewComment" must {
+    "not do anything" when {
+      "all subscribers, except the updating user had unread items for the topic" in {
+        val user4 = User("user4") //all subscribers to topicH except user 4 has unread items
+        val topicH = Topic("topicH")
+
+        topicService.newComment(topicH, user4)
+
+        expectNoMessage(200.milliseconds)
+      }
+    }
+
+    "increase unread count, except the updatingUser" when {
+      "there are subscribers who all read the topic until the NewComment" in {
+        val user4 = User("user4") //user4, 5 and 6 initially read all of topicI
+        val user5 = User("user5")
+        val user6 = User("user6")
+        val topicI = Topic("topicI")
+
+        topicService.newComment(topicI, user4)
+        val user5Unread = countUnreadTopics(initialSubscriptions(user5)) + 1 //increase by 1
+        val user6Unread = countUnreadTopics(initialSubscriptions(user6)) + 1 //increase by 1
+        val expected = Map(user5 -> user5Unread, user6 -> user6Unread) //except the updatingUser = user4
+
+        expectMsg(200.milliseconds, expected)
+      }
+    }
+  }
 
 }
