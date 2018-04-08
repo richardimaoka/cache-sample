@@ -42,7 +42,7 @@
 
 今回のコードは単純なので、Actorのみに全てのロジックをもたせてもよいかと思いましたが、
 それよりもServiceというものを作ったほうがコードの見通しが良くなるかと思い、
-各Serviceが、それぞれが受け持つActorの親Actorに対する参照を持つという形にしました。
+各Serviceが、それぞれが受け持つActorの親Actor(`UserParentActor`, `TopicService`)に対する参照を持つという形にしました。
 
 ### UserService
 
@@ -97,6 +97,7 @@ def removeTopic(topic: Topic): Unit
 ```
 
 以下の2つのメソッドでUserがTopicにたいしてsubscribe/unsubscribeできます。
+かく`TopicActor`は`children`として自身の該当する`Topic`にsubscribeしている`User`を記憶しています。
 
 ```scala
 def subscribeTo(topic: Topic, user: User): Unit
@@ -125,19 +126,22 @@ TopicServiceの`newComment/allRead`メソッドが呼ばれた時、以下の画
 
 という流れでActor間でメッセージが渡されます。
 
-`AllRead/NewComment`メッセージが送られる以前に`AddTopic`と`Subscribe`メッセージが送られ、当該TopicとそのTopicに対するUserのSubscriptionが完了している必要があります。それ以前に`AllRead/NewComment`が送られた場合エラーメッセージが表示されます。
-
 <img width=600 src="https://user-images.githubusercontent.com/7414320/38472296-d34b1fc0-3bb8-11e8-8e61-3009b2c2d08c.png">
 <img width=600 src="https://user-images.githubusercontent.com/7414320/38472299-db7ece76-3bb8-11e8-8709-bbdb7355ff49.png">
+
+`AllRead/NewComment`メッセージが送られる以前に`AddTopic`と`Subscribe`メッセージが送られ、当該TopicとそのTopicに対するUserのSubscriptionが完了している必要があります。それ以前に`AllRead/NewComment`が送られた場合エラーメッセージが表示されます。
 
 #### unread-count per user
 
 そして`TopicUserStatus`が`AllRead/NewComment`メッセージを受け取ると、
 当該のUserの既読数を更新するため`UserUnreadCountActor`に`Increment`もしくは`Decrement`メッセージを送ります。
-そのためには`UserUnreadCountActor`が事前に存在している必要があるので、
-あるuserに対するあらゆる通知が来る前に`UserService`の`addUser(user: User)`がよばれ`UserUnreadCountActor`の生成が完了しているという想定をしています。()
 
 <img width=600 src="https://user-images.githubusercontent.com/7414320/38472303-e1ae5686-3bb8-11e8-9d26-9de953e28c93.png">
+
+そのためには`UserUnreadCountActor`が事前に存在している必要があるので、
+あるuserに対するあらゆる通知が来る前に`UserService`の`addUser(user: User)`がよばれ`UserUnreadCountActor`の生成が完了しているという想定をしています。
+
+(`UserService/UserParentActor`と`TopicService/TopicParentActor`に直接つながりはないので、問題が発生したときのデバッグなどを考えてRace Conditionを避けるために全てのメッセージが`GateWayActor`のような単一のアクターを通過するようにしたほうが良かったかもしれません。そうすると`GateWayActor`が単一障害点かつボトルネックになる可能性がありますが…)
 
 #### Periodical notification to firebase
 
