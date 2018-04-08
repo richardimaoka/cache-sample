@@ -23,8 +23,6 @@ object TopicParentActor {
 class TopicParentActor(userService: UserService) extends Actor with ActorLogging {
   import TopicParentActor._
 
-  var mapping: Map[Topic, ActorRef] = Map.empty
-
   override def preStart() {
     super.preStart()
     log.debug(s"starting up TopicParentActor")
@@ -41,8 +39,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.AddTopic(topic) =>
       log.debug(s"Adding child for ${topic}")
-      val ref = context.actorOf(TopicActor.props(topic, userService), topic.topicId)
-      mapping = mapping.updated(topic, ref)
+      context.actorOf(TopicActor.props(topic, userService), topic.topicId)
 
     /**
      * When a `topic` is removed.
@@ -50,10 +47,9 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.RemoveTopic(topic) =>
       log.debug(s"Removing child for ${topic}")
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(ref) =>
           context.stop(ref)
-          mapping = mapping - topic
         case None =>
           log.error("{} is not initialized yet", topic)
       }
@@ -63,7 +59,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.Subscribe(topic, user) =>
       log.debug("{} subscribing to {}", user, topic)
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(topicRef) =>
           topicRef ! TopicActor.Message.Subscribe(user)
         case None =>
@@ -75,7 +71,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.Unsubscribe(topic, user) =>
       log.debug("{} unsubscribing from {}", user, topic)
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(topicRef) =>
           topicRef ! TopicActor.Message.Unsubscribe(user)
         case None =>
@@ -88,7 +84,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.AllRead(topic, user) =>
       log.debug("{} subscribing to {}", user, topic)
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(topicRef) =>
           topicRef ! TopicActor.Message.AllRead(user)
         case None =>
@@ -101,7 +97,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.NewComment(topic, updatingUser) =>
       log.debug("{} add a new comment to {}", updatingUser, topic)
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(topicRef) =>
           topicRef ! TopicActor.Message.NewComment(updatingUser)
         case None =>
@@ -114,7 +110,7 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
      */
     case Message.SetUnread(topic, user) =>
       log.debug("{} set unread to {}", user, topic)
-      mapping.get(topic) match {
+      context.child(topic.topicId) match {
         case Some(topicRef) =>
           topicRef ! TopicActor.Message.SetUnread(user)
         case None =>
