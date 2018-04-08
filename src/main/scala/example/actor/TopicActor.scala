@@ -38,6 +38,7 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
     log.debug(s"starting up TopicActor($topic)")
   }
 
+  // FIXME: when a topic is removed, all subscribing user's unread status should be updated
   override def postStop() {
     super.postStop()
     log.debug(s"stopped TopicActor($topic)")
