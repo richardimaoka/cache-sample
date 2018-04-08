@@ -5,12 +5,17 @@ import akka.testkit.{ImplicitSender, TestKit}
 import example.actor.BatchUpdaterActor
 import example.domain.{Topic, User}
 import example.service.{TestBatchUpdaterService, TopicService, UserService}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class BasicSpec() extends TestKit(ActorSystem("BasicSpec")) with ImplicitSender
-  with WordSpecLike with Matchers with BeforeAndAfterAll {
+class BasicSpec()
+  extends TestKit(ActorSystem("BasicSpec"))
+  with ImplicitSender
+  with WordSpecLike
+  with Matchers
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach {
 
   val batchUpdaterService = new TestBatchUpdaterService(system, testActor)
   val userService = new UserService(system, batchUpdaterService)
@@ -19,13 +24,32 @@ class BasicSpec() extends TestKit(ActorSystem("BasicSpec")) with ImplicitSender
   val users  = for { i <- 1 to 10 } yield User("user" + i)
   val topics = for { c <- List("A", "B", "C", "D", "E", "F", "G") } yield Topic("topic" + c)
 
-  override def beforeAll(): Unit = {
-    users.foreach { user => userService.addUser(user)}
-    topics.foreach { topic => topicService.addTopic(topic)}
-  }
 
   override def afterAll(): Unit = {
+    println("afterAll")
     TestKit.shutdownActorSystem(system)
+  }
+
+  override def beforeEach(): Unit = {
+    println("beforeEach")
+    users.foreach { user => userService.addUser(user)}
+    topics.foreach { topic => topicService.addTopic(topic)}
+
+    val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
+
+    for {
+      user <- users
+      (topic, unreadFlag) <- subscriptions.get(user).get
+    } {
+      topicService.subscribeTo(topic, user)
+      if (unreadFlag) topicService.setUnread(topic, user)
+    }
+  }
+
+  override def afterEach(): Unit = {
+    println("afterEach")
+    users.foreach { user => userService.removeUser(user) }
+    topics.foreach { topic => topicService.addTopic(topic)}
   }
 
   /**
@@ -77,80 +101,73 @@ class BasicSpec() extends TestKit(ActorSystem("BasicSpec")) with ImplicitSender
       val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
       val expected = constructCountData(subscriptions)
 
-      for {
-        user <- users
-        (topic, unreadFlag) <- subscriptions.get(user).get
-      } {
-        topicService.subscribeTo(topic, user)
-        if (unreadFlag) topicService.setUnread(topic, user)
-      }
-
       expectMsg(200.milliseconds, expected)
+      println("expectmsg receoved")
     }
   }
 
 
-  "Subscribe" when {
-    "invoked single time" must {
-      "Increase the unread count for a user/topic" in {
-        /**
-         * Only the diff from the previous batch update should be reported
-         */
-          val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
-
-          val user3 = User("user3")
-          topicService.subscribeTo(Topic("topicA"), user3)
-          topicService.setUnread(Topic("topicA"), user3)
-
-          val user3Unread = countUnreadTopics(subscriptions.get(user3).get)
-          val expected = Map(user3 -> (user3Unread + 1))
-
-          expectMsg(200.milliseconds, expected)
-
-      }
-      "does not change anything for already subscribed topic" in {
-        //expectNoMsg
-      }
-    }
-
-    "invoked multiple times" must {
-      "Increase the unread count for multiple users/topics" in {
-      }
-    }
-  }
-
-  "AllRead" when {
-    "invoked single time" must {
-      "Decrease the unread count for a user/topic" in {
-
-      }
-      "does not change anything for already subscribed topic" in {
-        //expectNoMsg
-      }
-    }
-
-    "invoked multiple times" must {
-      "Decrease the unread count for multiple users/topics" in {
-
-      }
-    }
-  }
-
-  "NewComment" when {
-    "invoked single time" must {
-      "Increase the unread count for all subscribers except the updating user" in {
-
-      }
-      "does not do anything if all subscribers had unread" in {
-
-      }
-    }
-
-    "invoked multiple times" must {
-      "Increase the unread count for all subscribers except the updating user" in {
-
-      }
-    }
-  }
+//  "Subscribe" when {
+//    "invoked single time" must {
+//      "Increase the unread count for a user/topic" in {
+//        /**
+//         * Only the diff from the previous batch update should be reported
+//         */
+//          val subscriptions: Map[User, List[(Topic, Boolean)]] = constructSubscription(users)
+//
+//          val user3 = User("user3")
+//          topicService.subscribeTo(Topic("topicA"), user3)
+//          topicService.setUnread(Topic("topicA"), user3)
+//
+//          val user3Unread = countUnreadTopics(subscriptions.get(user3).get)
+//          val expected = Map(user3 -> (user3Unread + 1))
+//
+//          expectMsg(200.milliseconds, expected)
+//
+//      }
+//      "does not change anything for already subscribed topic" in {
+//        //expectNoMsg
+//      }
+//    }
+//
+//    "invoked multiple times" must {
+//      "Increase the unread count for multiple users/topics" in {
+//      }
+//    }
+//  }
+//
+//  "AllRead" when {
+//    "invoked single time" must {
+//      "Decrease the unread count for a user/topic" in {
+//
+//      }
+//      "does not change anything for already subscribed topic" in {
+//        //expectNoMsg
+//      }
+//    }
+//
+//    "invoked multiple times" must {
+//      "Decrease the unread count for multiple users/topics" in {
+//
+//      }
+//    }
+//  }
+//
+//  "NewComment" when {
+//    "invoked single time" must {
+//      "Increase the unread count for all subscribers except the updating user" in {
+//
+//      }
+//      "does not do anything if all subscribers had unread" in {
+//
+//      }
+//    }
+//
+//    "invoked multiple times" must {
+//      "Increase the unread count for all subscribers except the updating user" in {
+//
+//      }
+//    }
+//  }
 
 }

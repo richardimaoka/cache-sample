@@ -27,6 +27,16 @@ class UserUnreadCountActor(user: User, batchUpdater: ActorRef) extends Actor wit
 
   var unreadCount: Int = 0
 
+  override def preStart() {
+    super.preStart()
+    log.debug(s"starting up UserUnreadCountActor($user)")
+  }
+
+  override def postStop() {
+    super.postStop()
+    log.debug(s"stopped UserUnreadCountActor($user)")
+  }
+
   def receive: Receive = {
     case Message.Increment =>
       log.debug("Increment received for {}", user)

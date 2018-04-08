@@ -38,6 +38,16 @@ class TopicUserStatusActor(topic: Topic, user: User)
   with Stash {
   import TopicUserStatusActor._
 
+  override def preStart() {
+    super.preStart()
+    log.debug(s"starting up TopicUserStatusActor($topic, $user)")
+  }
+
+  override def postStop() {
+    super.postStop()
+    log.debug(s"stopped TopicUserStatusActor($topic, $user)")
+  }
+
   startWith(State.Uninitialized, Data(null))
 
   when(State.Uninitialized) {

@@ -16,6 +16,12 @@ class TopicService(system: ActorSystem, userService: UserService) {
     topicParent ! Message.AddTopic(topic)
 
   /**
+   * Remove a topic and all corresponding subscriptions
+   */
+  def removeTopic(topic: Topic): Unit =
+    topicParent ! Message.RemoveTopic(topic)
+
+  /**
    * Let user subscribe to the topic
    * If the topic is not initialized inside this service, log an error message.
    */

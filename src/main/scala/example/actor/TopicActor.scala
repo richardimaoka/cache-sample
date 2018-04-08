@@ -33,6 +33,16 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
   implicit val ec = context.dispatcher
   var mapping: Map[User, ActorRef] = Map.empty
 
+  override def preStart() {
+    super.preStart()
+    log.debug(s"starting up TopicActor($topic)")
+  }
+
+  override def postStop() {
+    super.postStop()
+    log.debug(s"stopped TopicActor($topic)")
+  }
+
   def receive = {
     /**
      * Create a new child actor which remembers read/unread status for the topic and the user.

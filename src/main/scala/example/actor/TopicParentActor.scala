@@ -8,6 +8,7 @@ object TopicParentActor {
   sealed trait Message
   object Message {
     case class AddTopic(topic: Topic) extends Message
+    case class RemoveTopic(topic: Topic) extends Message
     case class Subscribe(topic: Topic, user: User) extends Message
     case class Unsubscribe(topic: Topic, user: User) extends Message
     case class AllRead(topic: Topic, user: User) extends Message
@@ -24,11 +25,32 @@ class TopicParentActor(userService: UserService) extends Actor with ActorLogging
 
   var mapping: Map[Topic, ActorRef] = Map.empty
 
+  override def preStart() {
+    super.preStart()
+    log.debug(s"starting up TopicParentActor")
+  }
+
+  override def postStop() {
+    super.postStop()
+    log.debug(s"stopped TopicParentActor")
+  }
+
   def receive = {
     case Message.AddTopic(topic) =>
       log.debug(s"Adding child for ${topic}")
       val ref = context.actorOf(TopicActor.props(topic, userService), topic.topicId)
       mapping = mapping.updated(topic, ref)
+
+    case Message.RemoveTopic(topic) =>
+      log.debug(s"Removing child for ${topic}")
+      mapping.get(topic) match {
+        case Some(ref) =>
+          context.stop(ref)
+          mapping = mapping - topic
+        case None =>
+          log.error("{} is not initialized yet", topic)
+      }
+
 
     case Message.Subscribe(topic, user) =>
       log.debug("{} subscribing to {}", user, topic)
