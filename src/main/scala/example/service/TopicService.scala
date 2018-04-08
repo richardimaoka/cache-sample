@@ -19,7 +19,7 @@ class TopicService(system: ActorSystem, userService: UserService) {
    * Remove a topic and all corresponding subscriptions
    */
   def removeTopic(topic: Topic): Unit = {
-    println("removeTopic")
+    topicParent ! Message.RemoveTopic(topic)
   }
 
   /**
