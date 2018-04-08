@@ -31,7 +31,6 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
   import TopicActor._
 
   implicit val ec = context.dispatcher
-  var mapping: Map[User, ActorRef] = Map.empty
 
   override def preStart() {
     super.preStart()
@@ -52,12 +51,11 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      */
     case Message.Subscribe(user) =>
       log.debug("Adding an actor representing {}'s subscription to {}", user, topic)
-      mapping.get(user) match {
+      context.child(user.userId) match {
         case Some(_) =>
           log.warning("{} tried to subscribe to {}, but the subscription was already registered.", user, topic)
         case None =>
           val statusRef = context.actorOf(TopicUserStatusActor.props(topic, user), user.userId)
-          mapping = mapping + (user -> statusRef)
           userService.userRef(user).onComplete {
             case Success(result) => result match {
               case Some(userRef) =>
@@ -77,10 +75,9 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      */
     case Message.Unsubscribe(user) =>
       log.info("Removing an actor representing {}'s subscription to {}", user, topic)
-      mapping.get(user) match {
+      context.child(user.userId) match {
         case Some(ref) =>
           context.stop(ref)
-          mapping = mapping - user
         case None =>
           log.error("{} cannot unsubscribe from {} as the user did not subscribe to the topic.", user, topic)
       }
@@ -91,7 +88,7 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      */
     case Message.NewComment(updatingUser) =>
       log.debug("NewComment from {} received for {}", updatingUser, topic)
-      mapping.get(updatingUser) match {
+      context.child(updatingUser.userId) match {
         case Some(toSkipRef) =>
           context.children.foreach {
             child => if(child != toSkipRef) child ! StatusMessage.NewComment
@@ -108,7 +105,7 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      * who read all the comments for the topic
      */
     case Message.AllRead(user) =>
-      mapping.get(user) match {
+      context.child(user.userId) match {
         case Some(child) =>
           child ! StatusMessage.AllRead
         case None =>
@@ -120,7 +117,7 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
      * It must be used only in the initialization phase of the cache for the user
      */
     case Message.SetUnread(user) =>
-      mapping.get(user) match {
+      context.child(user.userId) match {
         case Some(child) =>
           child ! StatusMessage.NewComment
         case None =>
