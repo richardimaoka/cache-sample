@@ -47,22 +47,27 @@ class TopicActor(topic: Topic, userService: UserService) extends Actor with Acto
   def receive = {
     /**
      * Create a new child actor which remembers read/unread status for the topic and the user.
-     * Assumption is that `userService` returns an `ActorRef` for the `user`,
-     * otherwise, log an error and do not create the child actor.
+     * Assumption is that the `user` already exists in `userService`, otherwise, log an error and do not create the child actor.
+     * If Subscribe(user) is sent for the already subscribed topic/user pair, log a warning and do nothing.
      */
     case Message.Subscribe(user) =>
       log.debug("Adding an actor representing {}'s subscription to {}", user, topic)
-      val statusRef = context.actorOf(TopicUserStatusActor.props(topic, user), user.userId)
-      mapping = mapping + (user -> statusRef)
-      userService.userRef(user).onComplete {
-        case Success(result) => result match {
-          case Some(userRef) =>
-            statusRef ! StatusMessage.SetUserRef(userRef)
-          case None =>
-            log.error("{} cannot subscribe to {} as the user count actor does not exist.", user, topic)
-        }
-        case Failure(e) =>
-          log.error(e, "ActorRef for {} could not be retrieved.", user, topic)
+      mapping.get(user) match {
+        case Some(_) =>
+          log.warning("{} tried to subscribe to {}, but the subscription was already registered.", user, topic)
+        case None =>
+          val statusRef = context.actorOf(TopicUserStatusActor.props(topic, user), user.userId)
+          mapping = mapping + (user -> statusRef)
+          userService.userRef(user).onComplete {
+            case Success(result) => result match {
+              case Some(userRef) =>
+                statusRef ! StatusMessage.SetUserRef(userRef)
+              case None =>
+                log.error("{} cannot subscribe to {} as the user count actor does not exist.", user, topic)
+            }
+            case Failure(e) =>
+              log.error(e, "ActorRef for {} could not be retrieved.", user, topic)
+          }
       }
 
 

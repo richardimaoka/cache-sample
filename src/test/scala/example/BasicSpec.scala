@@ -120,7 +120,12 @@ class BasicSpec()
 
       }
       "does not change anything for already subscribed topic" in {
-        //expectNoMsg
+        val user1 = User("user1")
+        val topicD = Topic("topicD")
+        topicService.subscribeTo(topicD, user1)
+        topicService.setUnread(topicD, user1)
+
+        expectNoMessage(200.milliseconds)
       }
     }
 
